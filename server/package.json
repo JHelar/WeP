@@ -1,0 +1,29 @@
+{
+  "name": "wep-server",
+  "version": "1.0.0",
+  "description": "Server for the WeP project",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -p ./tsconfig.json",
+    "watch": "tsc -w -p ./tsconfig.json",
+    "start": "node ./index.js"
+  },
+  "author": "John Larsson <john.helarsson@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.3",
+    "fs-extra": "^7.0.0",
+    "node-fetch": "^2.2.0",
+    "winston": "^3.0.0",
+    "ws": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.16.0",
+    "@types/fs-extra": "^5.0.4",
+    "@types/node": "^10.9.3",
+    "@types/node-fetch": "^2.1.2",
+    "@types/winston": "^2.4.4",
+    "@types/ws": "^6.0.0",
+    "typescript": "^3.0.3"
+  }
+}
