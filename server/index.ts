@@ -6,6 +6,7 @@ import winston, { stream } from 'winston';
 
 import sc, { Sources } from './src/song-source';
 import Streamer from './src/streamer';
+import { Writable } from 'stream';
 
 const app = express();
 
@@ -37,8 +38,13 @@ const createSongSource = sc(logger, [
 ]);
 
 // Initialize Streamer
-const streamer = new Streamer(logger);
-streamer.on('song_data', data => logger.info(data));
+const streamer = new Streamer(logger, new Writable({
+    write(chunk, enc, cb) {
+        console.log(chunk);
+        cb();
+    }
+}));
+streamer.on('song:end', () => logger.info('Song ended'));
 
 createSongSource('http://ccrma.stanford.edu/~jos/mp3/Harpsichord.mp3')
     .then(result => {

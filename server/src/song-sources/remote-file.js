@@ -24,19 +24,24 @@ const localSource = (logger) => {
             const tempFile = fs_extra_1.default.createWriteStream(TEMP_FILE_PATH);
             result.body.pipe(tempFile);
             result.body.on('error', rej);
-            tempFile.on('finish', () => {
-                const read_stream = fs_extra_1.default.createReadStream(TEMP_FILE_PATH);
-                const media_size = 0; //(localStat.size - HEADER_CHUNK_SIZE) / 2;
+            tempFile.on('finish', () => __awaiter(this, void 0, void 0, function* () {
+                const stat = yield fs_extra_1.default.stat(TEMP_FILE_PATH);
+                const read_stream = fs_extra_1.default.createReadStream(TEMP_FILE_PATH, {
+                    flags: 'r',
+                    mode: 0x666,
+                    highWaterMark: song_source_1.BUFFER_SIZE_STREAMING
+                });
+                const media_size = (stat.size - song_source_1.HEADER_CHUNK_SIZE) / 2;
                 read_stream.on('end', () => __awaiter(this, void 0, void 0, function* () {
                     yield fs_extra_1.default.unlink(TEMP_FILE_PATH);
                     logger.info('Deleted temp file.');
                 }));
                 res({
-                    read_stream,
                     buffer_size: song_source_1.BUFFER_SIZE_STREAMING,
+                    read_stream,
                     media_size
                 });
-            });
+            }));
             tempFile.on('error', rej);
         });
     });

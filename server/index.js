@@ -16,6 +16,7 @@ const ws_1 = __importDefault(require("ws"));
 const winston_1 = __importDefault(require("winston"));
 const song_source_1 = __importStar(require("./src/song-source"));
 const streamer_1 = __importDefault(require("./src/streamer"));
+const stream_1 = require("stream");
 const app = express_1.default();
 // Initialize a simple http server
 const server = http_1.default.createServer(app);
@@ -41,8 +42,13 @@ const createSongSource = song_source_1.default(logger, [
     song_source_1.Sources.Remote(logger)
 ]);
 // Initialize Streamer
-const streamer = new streamer_1.default(logger);
-streamer.on('song_data', data => logger.info(data));
+const streamer = new streamer_1.default(logger, new stream_1.Writable({
+    write(chunk, enc, cb) {
+        console.log(chunk);
+        cb();
+    }
+}));
+streamer.on('song:end', () => logger.info('Song ended'));
 createSongSource('http://ccrma.stanford.edu/~jos/mp3/Harpsichord.mp3')
     .then(result => {
     streamer.play(result);

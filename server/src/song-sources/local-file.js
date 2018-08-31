@@ -16,14 +16,14 @@ const song_source_1 = require("../song-source");
 const localSource = (logger) => {
     const create = (songPath) => __awaiter(this, void 0, void 0, function* () {
         logger.info(`Creating SongSource from local path: ${songPath}`);
-        const localStat = yield fs_extra_1.default.stat(songPath);
-        if (!localStat.isFile())
+        const stat = yield fs_extra_1.default.stat(songPath);
+        if (!stat.isFile())
             throw new Error(`${songPath} is not a file`);
-        const media_size = (localStat.size - song_source_1.HEADER_CHUNK_SIZE) / 2;
+        const media_size = (stat.size - song_source_1.HEADER_CHUNK_SIZE) / 2;
         const read_stream = fs_extra_1.default.createReadStream(songPath, {
             flags: 'r',
             mode: 0x666,
-            start: song_source_1.HEADER_CHUNK_SIZE
+            highWaterMark: song_source_1.BUFFER_SIZE_STREAMING
         });
         return {
             buffer_size: song_source_1.BUFFER_SIZE_STREAMING,

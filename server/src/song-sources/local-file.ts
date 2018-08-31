@@ -7,16 +7,16 @@ const localSource = (logger: Logger) : SongSourceCreator => {
         
         logger.info(`Creating SongSource from local path: ${songPath}`);
 
-        const localStat = await fs.stat(songPath);
+        const stat = await fs.stat(songPath);
 
-        if (!localStat.isFile()) throw new Error(`${songPath} is not a file`);
+        if (!stat.isFile()) throw new Error(`${songPath} is not a file`);
 
-        const media_size = (localStat.size - HEADER_CHUNK_SIZE) / 2;
+        const media_size = (stat.size - HEADER_CHUNK_SIZE) / 2;
 
         const read_stream = fs.createReadStream(songPath, {
             flags: 'r',
             mode: 0x666,
-            start: HEADER_CHUNK_SIZE
+            highWaterMark: BUFFER_SIZE_STREAMING
         })
 
         return {

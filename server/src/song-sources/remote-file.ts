@@ -18,9 +18,16 @@ const localSource = (logger: Logger) : SongSourceCreator => {
             result.body.pipe(tempFile);
             result.body.on('error', rej);
 
-            tempFile.on('finish', () => {
-                const read_stream = fs.createReadStream(TEMP_FILE_PATH);
-                const media_size = 0;//(localStat.size - HEADER_CHUNK_SIZE) / 2;
+            tempFile.on('finish', async () => {
+                const stat = await fs.stat(TEMP_FILE_PATH);
+
+                const read_stream = fs.createReadStream(TEMP_FILE_PATH,{
+                    flags: 'r',
+                    mode: 0x666,
+                    highWaterMark: BUFFER_SIZE_STREAMING
+                });
+
+                const media_size = (stat.size - HEADER_CHUNK_SIZE) / 2;
 
                 read_stream.on('end', async () => {
                     await fs.unlink(TEMP_FILE_PATH)
@@ -28,8 +35,8 @@ const localSource = (logger: Logger) : SongSourceCreator => {
                 })
 
                 res({
-                    read_stream,
                     buffer_size: BUFFER_SIZE_STREAMING,
+                    read_stream,
                     media_size
                 })
             })
