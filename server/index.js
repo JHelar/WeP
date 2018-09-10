@@ -14,9 +14,10 @@ const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
 const ws_1 = __importDefault(require("ws"));
 const winston_1 = __importDefault(require("winston"));
-const song_source_1 = __importStar(require("./src/song-source"));
-const streamer_1 = __importDefault(require("./src/streamer"));
 const stream_1 = require("stream");
+const song_source_1 = __importStar(require("./src/song-source"));
+const song_queue_1 = __importDefault(require("./src/song-queue"));
+const streamer_1 = __importDefault(require("./src/streamer"));
 const app = express_1.default();
 // Initialize a simple http server
 const server = http_1.default.createServer(app);
@@ -48,12 +49,27 @@ const streamer = new streamer_1.default(logger, new stream_1.Writable({
         cb();
     }
 }));
-streamer.on('song:end', () => logger.info('Song ended'));
-createSongSource('http://ccrma.stanford.edu/~jos/mp3/Harpsichord.mp3')
-    .then(result => {
-    streamer.play(result);
+// Initialize SongQueue
+const queue = song_queue_1.default();
+// Add items to queue
+const songs = Promise.all([
+    createSongSource('http://ccrma.stanford.edu/~jos/mp3/Harpsichord.mp3'),
+    createSongSource('https://www.sample-videos.com/audio/mp3/crowd-cheering.mp3'),
+]);
+songs
+    .then(s => {
+    s.forEach(queue.enqueue);
+    streamer.play(queue.pop());
 })
-    .catch(err => logger.error(err.message));
+    .catch(logger.error);
+streamer.on('song:end', () => {
+    logger.info('Song ended, play next');
+    streamer.play(queue.pop());
+});
+streamer.on('song:chunk', chunk => {
+    logger.info('Chunk');
+    setTimeout(streamer.send_next_chunk, 1000);
+});
 // server.listen(process.env.PORT || 8080, () => {
 //     console.log(`Server started on port ${(server.address() as AddressInfo).port}!`)
 // })

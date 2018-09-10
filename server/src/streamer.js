@@ -5,10 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = __importDefault(require("events"));
 const stream_1 = require("stream");
-const beforeWriter = new stream_1.Writable({
-    write(chunk, encoding, cb) {
-        console.log('Before');
-    }
+const createWriteStream = (write) => new stream_1.Writable({
+    write
 });
 class Streamer extends events_1.default {
     constructor(logger, writer) {
@@ -16,9 +14,15 @@ class Streamer extends events_1.default {
         this.logger = logger;
         this.writer = writer;
         this.stream_callback = null;
+        this.send_next_chunk = this.send_next_chunk.bind(this);
+        this.sourceEnded = this.sourceEnded.bind(this);
+    }
+    writeToStream(chunk, encoding, callback) {
+        this.send_chunk(chunk);
+        this.stream_callback = callback;
     }
     sourceEnded() {
-        this.logger.info('Song ended');
+        this.logger.debug('Source ended');
         this.emit('song:end');
     }
     send_chunk(chunk) {
@@ -32,15 +36,14 @@ class Streamer extends events_1.default {
         }
     }
     play(source) {
+        if (!source) {
+            this.logger.info('No valid source to play.');
+            return;
+        }
         this.logger.info('New song');
         // Setup end event
-        source.read_stream.on('end', this.sourceEnded.bind(this));
-        source.read_stream.pipe(new stream_1.Writable({
-            write: (chunk, enc, cb) => {
-                this.send_chunk(chunk);
-                this.stream_callback = cb;
-            }
-        }));
+        source.read_stream.on('end', this.sourceEnded);
+        source.read_stream.pipe(createWriteStream(this.writeToStream.bind(this)));
     }
 }
 exports.default = Streamer;
